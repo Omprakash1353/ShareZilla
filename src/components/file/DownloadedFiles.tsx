@@ -18,18 +18,12 @@ const DownloadedFiles = () => {
   const fileState = useAppSelector((state) => state.file);
   const dispatch = useAppDispatch();
 
-  const handleDownload = (fileId?: string) => {
-    if (fileId) {
-      const fileToDownload = fileState.downloadedFiles?.find(
-        (f) => f.id === fileId
-      );
-      if (fileToDownload) {
-        saveAs(fileToDownload.file, fileToDownload.fileName);
-      }
-    } else {
-      if (fileState.downloadedFile && fileState.fileName) {
-        saveAs(fileState.downloadedFile, fileState.fileName);
-      }
+  const handleDownload = (fileId: string) => {
+    const fileToDownload = fileState.downloadedFiles?.find(
+      (f) => f.id === fileId
+    );
+    if (fileToDownload) {
+      saveAs(fileToDownload.file, fileToDownload.fileName);
     }
   };
 
@@ -41,7 +35,10 @@ const DownloadedFiles = () => {
     dispatch(clearAllDownloadedFiles());
   };
 
-  if (!fileState.downloadedFiles || fileState.downloadedFiles.length === 0) {
+  if (
+    (!fileState.downloadedFiles || fileState.downloadedFiles.length === 0) &&
+    !fileState.isReceiving
+  ) {
     return null;
   }
 
@@ -60,6 +57,30 @@ const DownloadedFiles = () => {
       </div>
 
       <div className="space-y-2 max-h-48 overflow-y-auto">
+        {fileState.isReceiving && (
+          <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-green-600 flex-shrink-0">📥</span>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-sm text-gray-800 truncate">
+                    📄 {fileState.fileName}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {fileState.receiveProgress}%
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <progress
+                  className="progress progress-success w-24"
+                  value={fileState.receiveProgress}
+                  max="100"
+                ></progress>
+              </div>
+            </div>
+          </div>
+        )}
         {fileState.downloadedFiles.map((downloadedFile) => (
           <div
             key={downloadedFile.id}
@@ -73,7 +94,7 @@ const DownloadedFiles = () => {
                     📄 {downloadedFile.fileName}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {formatFileSize(downloadedFile.size)} •
+                    {formatFileSize(downloadedFile.size)} •{" "}
                     {new Date(downloadedFile.receivedAt).toLocaleTimeString()}
                   </div>
                 </div>

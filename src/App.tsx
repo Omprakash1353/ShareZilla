@@ -4,9 +4,7 @@ import FileScannerModal from "./components/common/FileScannerModal";
 import ScannerModal from "./components/common/ScannerModal";
 import DownloadedFiles from "./components/file/DownloadedFiles";
 import FileUploader from "./components/file/FileUploader";
-import ProgressView, {
-  type ProgressState,
-} from "./components/file/ProgressView";
+import UploadingFiles from "./components/file/UploadingFiles";
 import Header from "./components/layout/Header";
 import QRCodeModal from "./components/QRCodeModal";
 import ConnectionManager from "./components/session/ConnectionManager";
@@ -18,20 +16,15 @@ import {
   connectPeer,
 } from "./store/connection/connectionSlice";
 import {
-  addUploadingFile,
   resetProgress,
   setDownloadedFile,
   setFileUploadError,
+  setReceivingFileName,
   setReceiveProgress,
-  setUploadProgress,
   updateFileUploadProgress,
 } from "./store/file/fileSlice";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { startPeer, stopPeerSession } from "./store/peer/peerSlice";
-
-interface UploadFileWithMeta extends File {
-  id: string;
-}
 
 export default function FileShare() {
   const peer = useAppSelector((state) => state.peer);
@@ -39,59 +32,37 @@ export default function FileShare() {
   const fileState = useAppSelector((state) => state.file);
   const dispatch = useAppDispatch();
 
-  const [fileList, setFileList] = useState<UploadFileWithMeta[]>([]);
+  const [fileList, setFileList] = useState<File[]>([]);
   const [sendLoading, setSendLoading] = useState(false);
-  const [progressState, setProgressState] = useState<ProgressState>({
-    isUploading: false,
-    isReceiving: false,
-    uploadProgress: 0,
-    receiveProgress: 0,
-    currentFileName: "",
-    totalFiles: 0,
-    currentFileIndex: 0,
-    currentUploadFileIds: [],
-  });
   const [showQRModal, setShowQRModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showFileScanner, setShowFileScanner] = useState(false);
 
   const onDrop = (acceptedFiles: File[]) => {
-    const filesWithMeta = acceptedFiles.map((file) => {
-      return Object.assign(file, {
-        id: `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      });
-    });
-    setFileList((prev) => [...prev, ...filesWithMeta]);
+    setFileList((prev) => [...prev, ...acceptedFiles]);
   };
+
+  useEffect(() => {
+    if (fileList.length > 0 && connection.selectedId) {
+      handleUpload();
+    }
+  }, [fileList, connection.selectedId]);
 
   useEffect(() => {
     if (connection.selectedId) {
       PeerConnection.onConnectionReceiveData(connection.selectedId, (data) => {
         if (data.dataType === DataType.CHUNK) {
-          setProgressState((prev) => ({
-            ...prev,
-            isReceiving: true,
-            currentFileName: data.fileName || "Unknown file",
-          }));
-
+          if (data.fileName) {
+            dispatch(setReceivingFileName(data.fileName));
+          }
           handleReceivedChunk(
             data,
             (progress) => {
               const progressPercent = Math.round(progress * 100);
-              setProgressState((prev) => ({
-                ...prev,
-                receiveProgress: progressPercent,
-              }));
-              dispatch(setReceiveProgress(progress));
+              dispatch(setReceiveProgress(progressPercent));
             },
             (file, fileName) => {
               dispatch(setDownloadedFile({ file, fileName }));
-              setProgressState((prev) => ({
-                ...prev,
-                isReceiving: false,
-                receiveProgress: 0,
-                currentFileName: "",
-              }));
               toast.success(`File received: ${fileName}`);
             }
           );
@@ -107,16 +78,6 @@ export default function FileShare() {
     dispatch(stopPeerSession());
     dispatch(resetProgress());
     setFileList([]);
-    setProgressState({
-      isUploading: false,
-      isReceiving: false,
-      uploadProgress: 0,
-      receiveProgress: 0,
-      currentFileName: "",
-      totalFiles: 0,
-      currentFileIndex: 0,
-      currentUploadFileIds: [],
-    });
   };
 
   const handleUpload = async () => {
@@ -126,77 +87,38 @@ export default function FileShare() {
 
     setSendLoading(true);
 
-    const uploadFileIds: string[] = [];
-    for (const file of fileList) {
-      dispatch(addUploadingFile({ fileName: file.name, size: file.size }));
-      uploadFileIds.push(file.id);
-    }
-
-    setProgressState((prev) => ({
-      ...prev,
-      isUploading: true,
-      totalFiles: fileList.length,
-      currentFileIndex: 0,
-      currentUploadFileIds: uploadFileIds,
-    }));
-
     try {
       for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
-        const fileId = uploadFileIds[i];
+        const fileId = fileState.uploadedFiles[i].id;
 
-        setProgressState((prev) => ({
-          ...prev,
-          currentFileName: file.name,
-          currentFileIndex: i + 1,
-          uploadProgress: 0,
-        }));
-
-        await sendFileInChunks(file, connection.selectedId, (progress) => {
-          const progressPercent = Math.round(progress * 100);
-          dispatch(
-            updateFileUploadProgress({ fileId, progress: progressPercent })
-          );
-          setProgressState((prev) => ({
-            ...prev,
-            uploadProgress: progressPercent,
-          }));
-          dispatch(setUploadProgress(progress));
-        });
+        await sendFileInChunks(
+          file,
+          connection.selectedId,
+          fileId,
+          (progress) => {
+            const progressPercent = Math.round(progress * 100);
+            dispatch(
+              updateFileUploadProgress({ fileId, progress: progressPercent })
+            );
+          }
+        );
 
         dispatch(updateFileUploadProgress({ fileId, progress: 100 }));
-        await new Promise((resolve) => setTimeout(resolve, 2));
       }
 
       toast.success("All files sent successfully");
       setFileList([]);
-      setProgressState((prev) => ({
-        ...prev,
-        isUploading: false,
-        uploadProgress: 0,
-        currentFileName: "",
-        totalFiles: 0,
-        currentFileIndex: 0,
-        currentUploadFileIds: [],
-      }));
     } catch (err) {
       console.error(err);
       toast.error("Error sending files");
-      uploadFileIds.forEach((fileId) => {
-        dispatch(setFileUploadError(fileId));
+      fileState.uploadedFiles.forEach((file) => {
+        if (file.status === "uploading") {
+          dispatch(setFileUploadError(file.id));
+        }
       });
-      setProgressState((prev) => ({
-        ...prev,
-        isUploading: false,
-        uploadProgress: 0,
-        currentFileName: "",
-        totalFiles: 0,
-        currentFileIndex: 0,
-        currentUploadFileIds: [],
-      }));
     } finally {
       setSendLoading(false);
-      dispatch(resetProgress());
     }
   };
 
@@ -225,27 +147,14 @@ export default function FileShare() {
                 handleStopSession={handleStopSession}
               />
 
-              <ProgressView progressState={progressState} />
+              <UploadingFiles />
 
               <FileUploader
                 onDrop={onDrop}
-                isUploading={progressState.isUploading}
-                sendLoading={sendLoading}
-                fileListLength={fileList.length}
-                handleUpload={handleUpload}
-                currentFileIndex={progressState.currentFileIndex}
-                totalFiles={progressState.totalFiles}
-              />
-
-              {fileState.progress > 0 &&
-                !progressState.isUploading &&
-                !progressState.isReceiving && (
-                  <progress
-                    className="progress progress-success w-full"
-                    value={fileState.progress}
-                    max="1"
-                  ></progress>
+                isUploading={fileState.uploadedFiles.some(
+                  (f) => f.status === "uploading"
                 )}
+              />
 
               <DownloadedFiles />
             </section>

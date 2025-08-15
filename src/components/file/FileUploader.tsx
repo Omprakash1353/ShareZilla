@@ -1,25 +1,26 @@
 import React from "react";
 import { useDropzone } from "react-dropzone";
+import { useDispatch } from "react-redux";
+import { addUploadingFile } from "../../store/file/fileSlice";
 
 interface FileUploaderProps {
   onDrop: (acceptedFiles: File[]) => void;
   isUploading: boolean;
-  sendLoading: boolean;
-  fileListLength: number;
-  handleUpload: () => void;
-  currentFileIndex: number;
-  totalFiles: number;
 }
 
 const FileUploader: React.FC<FileUploaderProps> = ({
-  onDrop,
+  onDrop: parentOnDrop,
   isUploading,
-  sendLoading,
-  fileListLength,
-  handleUpload,
-  currentFileIndex,
-  totalFiles,
 }) => {
+  const dispatch = useDispatch();
+
+  const onDrop = (acceptedFiles: File[]) => {
+    acceptedFiles.forEach((file) => {
+      dispatch(addUploadingFile({ fileName: file.name, size: file.size }));
+    });
+    parentOnDrop(acceptedFiles);
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     multiple: true,
     maxSize: 1024 * 1024 * 1024,
@@ -27,33 +28,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   });
 
   return (
-    <>
-      <div
-        {...getRootProps()}
-        className="border-dashed border-2 p-4 rounded-md text-center cursor-pointer bg-base-200 hover:bg-base-300 transition"
-      >
-        <input {...getInputProps()} />
-        <p className="text-gray-400">
-          {isDragActive
-            ? "Drop files here..."
-            : "Drag and drop files, or click to select"}
-        </p>
-      </div>
-
-      <button
-        onClick={handleUpload}
-        className="btn btn-success"
-        disabled={!fileListLength || sendLoading || isUploading}
-      >
-        {isUploading
-          ? `Sending... (${currentFileIndex}/${totalFiles})`
-          : sendLoading
-          ? "Preparing..."
-          : `Send ${fileListLength > 0 ? fileListLength : ""} File${
-              fileListLength !== 1 ? "s" : ""
-            }`}
-      </button>
-    </>
+    <div
+      {...getRootProps()}
+      className="border-dashed border-2 p-4 rounded-md text-center cursor-pointer bg-base-200 hover:bg-base-300 transition"
+    >
+      <input {...getInputProps()} />
+      <p className="text-gray-400">
+        {isDragActive
+          ? "Drop files here..."
+          : "Drag and drop files, or click to select"}
+      </p>
+    </div>
   );
 };
 

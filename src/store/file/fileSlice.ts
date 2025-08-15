@@ -22,10 +22,8 @@ interface FileState {
   receiveProgress: number;
   uploadedFiles: UploadedFile[];
   downloadedFiles: DownloadedFile[];
-  // Keep legacy fields for backward compatibility
-  downloadedFile: Blob | null;
   fileName: string | null;
-  progress: number;
+  isReceiving: boolean;
 }
 
 const initialState: FileState = {
@@ -33,20 +31,14 @@ const initialState: FileState = {
   receiveProgress: 0,
   uploadedFiles: [],
   downloadedFiles: [],
-  downloadedFile: null,
   fileName: null,
-  progress: 0,
+  isReceiving: false,
 };
 
 const fileSlice = createSlice({
   name: "file",
   initialState,
   reducers: {
-    setUploadProgress: (state, action: PayloadAction<number>) => {
-      state.uploadProgress = action.payload;
-      // Keep legacy progress updated for backward compatibility
-      state.progress = action.payload;
-    },
     addUploadingFile: (
       state,
       action: PayloadAction<{ fileName: string; size: number }>
@@ -89,7 +81,11 @@ const fileSlice = createSlice({
     clearAllUploadedFiles: (state) => {
       state.uploadedFiles = [];
     },
+    setReceivingFileName: (state, action: PayloadAction<string>) => {
+      state.fileName = action.payload;
+    },
     setReceiveProgress: (state, action: PayloadAction<number>) => {
+      state.isReceiving = action.payload > 0 && action.payload < 100;
       state.receiveProgress = action.payload;
     },
     setDownloadedFile: (
@@ -103,59 +99,34 @@ const fileSlice = createSlice({
         receivedAt: Date.now(),
         size: action.payload.file.size,
       };
-
-      // Add to the list of downloaded files
       state.downloadedFiles.push(newFile);
-
-      // Keep legacy fields updated with the latest file for backward compatibility
-      state.downloadedFile = action.payload.file;
       state.fileName = action.payload.fileName;
-
-      // Don't automatically remove the file - let user decide
-      // state.receiveProgress = 0;
-    },
-    clearDownloadedFile: (state) => {
-      // Legacy action - clear the legacy fields only
-      state.downloadedFile = null;
-      state.fileName = null;
     },
     removeDownloadedFile: (state, action: PayloadAction<string>) => {
       state.downloadedFiles = state.downloadedFiles.filter(
         (file) => file.id !== action.payload
       );
-
-      // If the removed file was the legacy file, clear legacy fields
-      const removedFile = state.downloadedFiles.find(
-        (f) => f.id === action.payload
-      );
-      if (removedFile && state.fileName === removedFile.fileName) {
-        state.downloadedFile = null;
-        state.fileName = null;
-      }
     },
     clearAllDownloadedFiles: (state) => {
       state.downloadedFiles = [];
-      state.downloadedFile = null;
       state.fileName = null;
     },
     resetProgress: (state) => {
       state.uploadProgress = 0;
       state.receiveProgress = 0;
-      state.progress = 0;
     },
   },
 });
 
 export const {
-  setUploadProgress,
   addUploadingFile,
   updateFileUploadProgress,
   setFileUploadError,
   removeUploadedFile,
   clearAllUploadedFiles,
+  setReceivingFileName,
   setReceiveProgress,
   setDownloadedFile,
-  clearDownloadedFile,
   removeDownloadedFile,
   clearAllDownloadedFiles,
   resetProgress,

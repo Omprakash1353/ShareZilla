@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
-
 import { DataType, PeerConnection, type Data } from "./peer";
 
 const CHUNK_SIZE = 1024 * 1024;
@@ -7,9 +5,9 @@ const CHUNK_SIZE = 1024 * 1024;
 export const sendFileInChunks = async (
   file: File,
   connectionId: string,
+  fileId: string, // Add fileId as a parameter
   onProgress: (progress: number) => void
 ) => {
-  const fileId = uuidv4();
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
   for (let i = 0; i < totalChunks; i++) {
@@ -24,7 +22,7 @@ export const sendFileInChunks = async (
       totalChunks,
       fileName: file.name,
       fileType: file.type,
-      fileId,
+      fileId, // Use the provided fileId
     });
 
     const progress = (i + 1) / totalChunks;
