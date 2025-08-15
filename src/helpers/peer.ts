@@ -1,8 +1,5 @@
-import Peer, {
-  type DataConnection,
-  type PeerError,
-  type PeerErrorType,
-} from "peerjs";
+import type { DataConnection, PeerError, PeerErrorType } from "peerjs";
+import Peer from "peerjs";
 import { toast } from "sonner";
 
 export enum DataType {

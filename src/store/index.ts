@@ -3,14 +3,14 @@ import {
   type Action,
   type ThunkAction,
 } from "@reduxjs/toolkit";
-import { ConnectionReducer } from "./connection/connectionReducer";
-import { PeerReducer } from "./peer/peerReducer";
+import connectionReducer from "./connection/connectionSlice";
+import peerReducer from "./peer/peerSlice";
 import fileReducer from "./file/fileSlice";
 
 export const store = configureStore({
   reducer: {
-    peer: PeerReducer,
-    connection: ConnectionReducer,
+    peer: peerReducer,
+    connection: connectionReducer,
     file: fileReducer,
   },
   middleware: (getDefaultMiddleware) =>
