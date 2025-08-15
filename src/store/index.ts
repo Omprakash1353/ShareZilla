@@ -3,9 +3,10 @@ import {
   type Action,
   type ThunkAction,
 } from "@reduxjs/toolkit";
-import connectionReducer from "./connection/connectionSlice";
-import peerReducer from "./peer/peerSlice";
-import fileReducer from "./file/fileSlice";
+
+import connectionReducer from "@/store/connection/connectionSlice";
+import fileReducer from "@/store/file/fileSlice";
+import peerReducer from "@/store/peer/peerSlice";
 
 export const store = configureStore({
   reducer: {

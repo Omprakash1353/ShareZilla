@@ -3,11 +3,11 @@ import download from "js-file-download";
 import { toast } from "sonner";
 
 import type { AppThunk } from "..";
-import { DataType, PeerConnection } from "../../helpers/peer";
+import { DataType, PeerConnection } from "@/helpers/peer";
 import {
   addConnectionList,
   removeConnectionList,
-} from "../connection/connectionSlice";
+} from "@/store/connection/connectionSlice";
 
 export interface PeerState {
   readonly id?: string;

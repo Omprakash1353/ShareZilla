@@ -8,11 +8,11 @@ interface FileScannerModalProps {
   onScanSuccess: (decodedText: string) => void;
 }
 
-const FileScannerModal: React.FC<FileScannerModalProps> = ({
+export function FileScannerModal({
   show,
   onClose,
   onScanSuccess,
-}) => {
+}: FileScannerModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,6 +53,4 @@ const FileScannerModal: React.FC<FileScannerModalProps> = ({
       </div>
     </div>
   );
-};
-
-export default FileScannerModal;
+}

@@ -1,10 +1,11 @@
 import { saveAs } from "file-saver";
 import { Download } from "lucide-react";
+
 import {
   clearAllDownloadedFiles,
   removeDownloadedFile,
-} from "../../store/file/fileSlice";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
+} from "@/store/file/fileSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -14,7 +15,7 @@ const formatFileSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 };
 
-const DownloadedFiles = () => {
+export function DownloadedFiles() {
   const fileState = useAppSelector((state) => state.file);
   const dispatch = useAppDispatch();
 
@@ -120,6 +121,4 @@ const DownloadedFiles = () => {
       </div>
     </div>
   );
-};
-
-export default DownloadedFiles;
+}

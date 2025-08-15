@@ -1,14 +1,12 @@
-
-import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import type { RootState } from "../../store";
+import type { RootState } from "@/store";
 import {
   clearAllUploadedFiles,
   removeUploadedFile,
-} from "../../store/file/fileSlice";
+} from "@/store/file/fileSlice";
 
-const UploadingFiles: React.FC = () => {
+export function UploadingFiles() {
   const dispatch = useDispatch();
   const { uploadedFiles } = useSelector((state: RootState) => ({
     uploadedFiles: state.file.uploadedFiles,
@@ -87,6 +85,4 @@ const UploadingFiles: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default UploadingFiles;
+}

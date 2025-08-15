@@ -1,30 +1,31 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import FileScannerModal from "./components/common/FileScannerModal";
-import ScannerModal from "./components/common/ScannerModal";
-import DownloadedFiles from "./components/file/DownloadedFiles";
-import FileUploader from "./components/file/FileUploader";
-import UploadingFiles from "./components/file/UploadingFiles";
-import Header from "./components/layout/Header";
-import QRCodeModal from "./components/QRCodeModal";
-import ConnectionManager from "./components/session/ConnectionManager";
-import SessionView from "./components/session/SessionView";
-import { handleReceivedChunk, sendFileInChunks } from "./helpers/file-transfer";
-import { DataType, PeerConnection } from "./helpers/peer";
+
+import { FileScannerModal } from "@/components/common/FileScannerModal";
+import { ScannerModal } from "@/components/common/ScannerModal";
+import { DownloadedFiles } from "@/components/file/DownloadedFiles";
+import { FileUploader } from "@/components/file/FileUploader";
+import { UploadingFiles } from "@/components/file/UploadingFiles";
+import { Header } from "@/components/layout/Header";
+import { QRCodeModal } from "@/components/QRCodeModal";
+import { ConnectionManager } from "@/components/session/ConnectionManager";
+import { SessionView } from "@/components/session/SessionView";
+import { handleReceivedChunk, sendFileInChunks } from "@/helpers/file-transfer";
+import { DataType, PeerConnection } from "@/helpers/peer";
 import {
   changeConnectionInput,
   connectPeer,
-} from "./store/connection/connectionSlice";
+} from "@/store/connection/connectionSlice";
 import {
   resetProgress,
   setDownloadedFile,
   setFileUploadError,
-  setReceivingFileName,
   setReceiveProgress,
+  setReceivingFileName,
   updateFileUploadProgress,
-} from "./store/file/fileSlice";
-import { useAppDispatch, useAppSelector } from "./store/hooks";
-import { startPeer, stopPeerSession } from "./store/peer/peerSlice";
+} from "@/store/file/fileSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { startPeer, stopPeerSession } from "@/store/peer/peerSlice";
 
 export default function FileShare() {
   const peer = useAppSelector((state) => state.peer);
@@ -33,7 +34,6 @@ export default function FileShare() {
   const dispatch = useAppDispatch();
 
   const [fileList, setFileList] = useState<File[]>([]);
-  const [sendLoading, setSendLoading] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showFileScanner, setShowFileScanner] = useState(false);
@@ -85,8 +85,6 @@ export default function FileShare() {
     if (!connection.selectedId)
       return toast.warning("Please select a connected user");
 
-    setSendLoading(true);
-
     try {
       for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
@@ -117,8 +115,6 @@ export default function FileShare() {
           dispatch(setFileUploadError(file.id));
         }
       });
-    } finally {
-      setSendLoading(false);
     }
   };
 

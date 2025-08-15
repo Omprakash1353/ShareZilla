@@ -1,12 +1,12 @@
 import { Copy, QrCode } from "lucide-react";
-import React from "react";
 import { toast } from "sonner";
+
 import {
   changeConnectionInput,
   connectPeer,
   selectItem,
-} from "../../store/connection/connectionSlice";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
+} from "@/store/connection/connectionSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 interface ConnectionManagerProps {
   setShowQRModal: (show: boolean) => void;
@@ -15,12 +15,12 @@ interface ConnectionManagerProps {
   handleStopSession: () => void;
 }
 
-const ConnectionManager: React.FC<ConnectionManagerProps> = ({
+export function ConnectionManager({
   setShowQRModal,
   setShowScanner,
   setShowFileScanner,
   handleStopSession,
-}) => {
+}: ConnectionManagerProps) {
   const peer = useAppSelector((state) => state.peer);
   const connection = useAppSelector((state) => state.connection);
   const dispatch = useAppDispatch();
@@ -112,6 +112,4 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       )}
     </div>
   );
-};
-
-export default ConnectionManager;
+}

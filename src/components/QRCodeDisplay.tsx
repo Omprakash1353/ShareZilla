@@ -4,7 +4,7 @@ interface Props {
   id: string;
 }
 
-export default function QRCodeDisplay({ id }: Props) {
+export function QRCodeDisplay({ id }: Props) {
   return (
     <div className="p-4 bg-white">
       <QRCode

@@ -1,4 +1,4 @@
-import QRCodeDisplay from "./QRCodeDisplay";
+import { QRCodeDisplay } from "./QRCodeDisplay";
 
 interface Props {
   id: string;
@@ -6,7 +6,7 @@ interface Props {
   setShowFileScanner: (show: boolean) => void;
 }
 
-export default function QRCodeModal({ id, onClose, setShowFileScanner }: Props) {
+export function QRCodeModal({ id, onClose, setShowFileScanner }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-8 rounded-lg shadow-lg">

@@ -2,8 +2,8 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import download from "js-file-download";
 import { toast } from "sonner";
 
+import { DataType, PeerConnection } from "@/helpers/peer";
 import type { AppThunk } from "..";
-import { DataType, PeerConnection } from "../../helpers/peer";
 
 export interface ConnectionState {
   readonly id?: string;

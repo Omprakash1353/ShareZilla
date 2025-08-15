@@ -1,15 +1,11 @@
 import { Download, Laptop, Lock, Smartphone, Upload, Wifi } from "lucide-react";
-import React from "react";
 
 interface SessionViewProps {
   handleStartSession: () => void;
   loading: boolean;
 }
 
-const SessionView: React.FC<SessionViewProps> = ({
-  handleStartSession,
-  loading,
-}) => {
+export function SessionView({ handleStartSession, loading }: SessionViewProps) {
   return (
     <section className="flex flex-col items-center gap-6">
       {/* Device UI */}
@@ -78,6 +74,4 @@ const SessionView: React.FC<SessionViewProps> = ({
       </div>
     </section>
   );
-};
-
-export default SessionView;
+}

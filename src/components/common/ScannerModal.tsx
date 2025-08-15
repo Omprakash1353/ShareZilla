@@ -1,5 +1,5 @@
 import QrScanner from "qr-scanner";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 interface ScannerModalProps {
   show: boolean;
@@ -7,11 +7,11 @@ interface ScannerModalProps {
   onScanSuccess: (decodedText: string) => void;
 }
 
-const ScannerModal: React.FC<ScannerModalProps> = ({
+export function ScannerModal({
   show,
   onClose,
   onScanSuccess,
-}) => {
+}: ScannerModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -53,6 +53,4 @@ const ScannerModal: React.FC<ScannerModalProps> = ({
       </div>
     </div>
   );
-};
-
-export default ScannerModal;
+}

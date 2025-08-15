@@ -1,17 +1,17 @@
-import React from "react";
 import { useDropzone } from "react-dropzone";
 import { useDispatch } from "react-redux";
-import { addUploadingFile } from "../../store/file/fileSlice";
+
+import { addUploadingFile } from "@/store/file/fileSlice";
 
 interface FileUploaderProps {
   onDrop: (acceptedFiles: File[]) => void;
   isUploading: boolean;
 }
 
-const FileUploader: React.FC<FileUploaderProps> = ({
+export function FileUploader({
   onDrop: parentOnDrop,
   isUploading,
-}) => {
+}: FileUploaderProps) {
   const dispatch = useDispatch();
 
   const onDrop = (acceptedFiles: File[]) => {
@@ -32,7 +32,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       {...getRootProps()}
       className="border-dashed border-2 p-4 rounded-md text-center cursor-pointer bg-base-200 hover:bg-base-300 transition"
     >
-      <input {...getInputProps()} />
+      <input {...getInputProps()} disabled={isUploading} />
       <p className="text-gray-400">
         {isDragActive
           ? "Drop files here..."
@@ -40,6 +40,4 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       </p>
     </div>
   );
-};
-
-export default FileUploader;
+}
