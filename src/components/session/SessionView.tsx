@@ -1,4 +1,6 @@
 import { Download, Laptop, Lock, Smartphone, Upload, Wifi } from "lucide-react";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 
 interface SessionViewProps {
   handleStartSession: () => void;
@@ -45,32 +47,40 @@ export function SessionView({ handleStartSession, loading }: SessionViewProps) {
             </div>
           </div>
         </div>
-        <div className="absolute -top-3 -right-3 badge badge-accent px-3 py-1 shadow-lg">
+        <Badge
+          className="absolute -top-3 -right-3 px-3 py-1 shadow-lg"
+          variant="yellow"
+        >
           Online
-        </div>
-        <div className="absolute -bottom-3 -left-3 badge badge-warning px-3 py-1 shadow-lg">
+        </Badge>
+        <Badge
+          className="absolute -bottom-3 -left-3 px-3 py-1 shadow-lg"
+          variant="emerald"
+        >
           P2P Ready
-        </div>
+        </Badge>
       </div>
 
       {/* Start/Receive Buttons */}
       <div className="flex gap-6">
-        <button
-          className="btn btn-info w-28"
+        <Button
+          className="w-28"
+          variant="destructive"
           onClick={handleStartSession}
           disabled={loading}
         >
           <Upload className="size-5 mr-2" />
           Send
-        </button>
-        <button
-          className="btn btn-error w-28"
+        </Button>
+        <Button
+          className="w-28"
           onClick={handleStartSession}
           disabled={loading}
+          variant="blue"
         >
           <Download className="size-5 mr-2" />
           Receive
-        </button>
+        </Button>
       </div>
     </section>
   );

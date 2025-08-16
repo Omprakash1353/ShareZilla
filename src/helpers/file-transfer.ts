@@ -5,7 +5,7 @@ const CHUNK_SIZE = 1024 * 1024;
 export const sendFileInChunks = async (
   file: File,
   connectionId: string,
-  fileId: string, // Add fileId as a parameter
+  fileId: string,
   onProgress: (progress: number) => void
 ) => {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
@@ -25,7 +25,7 @@ export const sendFileInChunks = async (
       fileId, // Use the provided fileId
     });
 
-    const progress = (i + 1) / totalChunks;
+    const progress = ((i + 1) / totalChunks) * 100;
     onProgress(progress);
   }
 };
@@ -35,7 +35,7 @@ const receivedChunks = new Map<string, ArrayBuffer[]>();
 export const handleReceivedChunk = (
   data: Data,
   onProgress: (progress: number) => void,
-  onFileReady: (file: Blob, fileName: string) => void
+  onFileReady: (file: Blob, fileName: string, type: string) => void
 ) => {
   const { chunk, chunkIndex, totalChunks, fileName, fileType, fileId } = data;
 
@@ -44,7 +44,8 @@ export const handleReceivedChunk = (
     chunkIndex === undefined ||
     !totalChunks ||
     !fileId ||
-    !fileName
+    !fileName ||
+    !fileType
   ) {
     console.error("Invalid chunk data received");
     return;
@@ -57,12 +58,12 @@ export const handleReceivedChunk = (
   const chunks = receivedChunks.get(fileId)!;
   chunks[chunkIndex] = chunk;
 
-  const progress = chunks.filter(Boolean).length / totalChunks;
+  const progress = (chunks.filter(Boolean).length / totalChunks) * 100;
   onProgress(progress);
 
   if (chunks.filter(Boolean).length === totalChunks) {
     const fileBlob = new Blob(chunks, { type: fileType });
-    onFileReady(fileBlob, fileName);
+    onFileReady(fileBlob, fileName, fileType);
     receivedChunks.delete(fileId);
   }
 };

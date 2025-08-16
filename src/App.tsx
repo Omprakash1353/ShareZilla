@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
-import { FileScannerModal } from "@/components/common/FileScannerModal";
-import { ScannerModal } from "@/components/common/ScannerModal";
+import { QRCodeGenerator } from "@/components/QRCodeGenerator";
+import { QRCodeScanner } from "@/components/common/ScannerModal";
 import { DownloadedFiles } from "@/components/file/DownloadedFiles";
 import { FileUploader } from "@/components/file/FileUploader";
 import { UploadingFiles } from "@/components/file/UploadingFiles";
-import { Header } from "@/components/layout/Header";
-import { QRCodeModal } from "@/components/QRCodeModal";
 import { ConnectionManager } from "@/components/session/ConnectionManager";
 import { SessionView } from "@/components/session/SessionView";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { handleReceivedChunk, sendFileInChunks } from "@/helpers/file-transfer";
 import { DataType, PeerConnection } from "@/helpers/peer";
+import type { RootState } from "@/store";
 import {
   changeConnectionInput,
   connectPeer,
@@ -27,16 +29,27 @@ import {
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { startPeer, stopPeerSession } from "@/store/peer/peerSlice";
 
+export interface FileItem {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  timestamp: Date;
+  status: "completed" | "error" | "uploading";
+  data?: ArrayBuffer;
+}
+
 export default function FileShare() {
   const peer = useAppSelector((state) => state.peer);
   const connection = useAppSelector((state) => state.connection);
+  const { uploadedFiles } = useSelector((state: RootState) => ({
+    uploadedFiles: state.file.uploadedFiles,
+  }));
   const fileState = useAppSelector((state) => state.file);
   const dispatch = useAppDispatch();
 
   const [fileList, setFileList] = useState<File[]>([]);
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
-  const [showFileScanner, setShowFileScanner] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const onDrop = (acceptedFiles: File[]) => {
     setFileList((prev) => [...prev, ...acceptedFiles]);
@@ -61,8 +74,8 @@ export default function FileShare() {
               const progressPercent = Math.round(progress * 100);
               dispatch(setReceiveProgress(progressPercent));
             },
-            (file, fileName) => {
-              dispatch(setDownloadedFile({ file, fileName }));
+            (file, fileName, type) => {
+              dispatch(setDownloadedFile({ file, fileName, type }));
               toast.success(`File received: ${fileName}`);
             }
           );
@@ -72,13 +85,6 @@ export default function FileShare() {
   }, [connection.selectedId, dispatch]);
 
   const handleStartSession = () => dispatch(startPeer());
-
-  const handleStopSession = async () => {
-    await PeerConnection.closePeerSession();
-    dispatch(stopPeerSession());
-    dispatch(resetProgress());
-    setFileList([]);
-  };
 
   const handleUpload = async () => {
     if (fileList.length === 0) return toast.warning("Please select files");
@@ -118,15 +124,35 @@ export default function FileShare() {
     }
   };
 
+  const handleStopSession = async () => {
+    await PeerConnection.closePeerSession();
+    dispatch(stopPeerSession());
+    dispatch(resetProgress());
+    setFileList([]);
+  };
+
   const onScanSuccess = (decodedText: string) => {
     dispatch(changeConnectionInput(decodedText));
     dispatch(connectPeer(decodedText));
   };
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-1 gap-4 items-center justify-center px-4">
-      <div className="flex flex-col gap-6 max-w-2xl mx-auto">
-        <Header />
+    <div className="flex flex-col gap-6 mx-auto">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-6 text-center">
+          <h1 className="mb-2">ShareZilla</h1>
+          <div className="flex items-center flex-col lg:flex-row justify-center gap-2 mb-4">
+            <span>Your Device ID:</span>
+            <Badge variant="secondary" className="font-mono">
+              {peer.id}
+            </Badge>
+            <Badge
+              variant={connection.list.length > 0 ? "default" : "secondary"}
+            >
+              {connection.list.length} Connected
+            </Badge>
+          </div>
+        </div>
 
         <main className="flex flex-col gap-8">
           {!peer.started ? (
@@ -135,44 +161,51 @@ export default function FileShare() {
               loading={connection.loading}
             />
           ) : (
-            <section className="flex flex-col gap-6">
-              <ConnectionManager
-                setShowQRModal={setShowQRModal}
-                setShowScanner={setShowScanner}
-                setShowFileScanner={setShowFileScanner}
-                handleStopSession={handleStopSession}
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <FileUploader
+                  onDrop={onDrop}
+                  isUploading={fileState.uploadedFiles.some(
+                    (f) => f.status === "uploading"
+                  )}
+                />
 
-              <UploadingFiles />
+                <Tabs defaultValue="uploaded" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="uploaded">
+                      Uploaded Files ({uploadedFiles.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="received">
+                      Received Files ({fileState.downloadedFiles.length})
+                    </TabsTrigger>
+                  </TabsList>
 
-              <FileUploader
-                onDrop={onDrop}
-                isUploading={fileState.uploadedFiles.some(
-                  (f) => f.status === "uploading"
+                  <TabsContent value="uploaded" className="mt-4">
+                    <UploadingFiles />
+                  </TabsContent>
+
+                  <TabsContent value="received" className="mt-4">
+                    <DownloadedFiles />
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <div className="space-y-6">
+                <ConnectionManager
+                  onShowQRScanner={() => setShowQRScanner(true)}
+                />
+                {peer.id && <QRCodeGenerator peerId={peer.id} />}
+
+                {showQRScanner && (
+                  <QRCodeScanner
+                    open={showQRScanner}
+                    onClose={() => setShowQRScanner(false)}
+                  />
                 )}
-              />
-
-              <DownloadedFiles />
-            </section>
+              </div>
+            </div>
           )}
         </main>
-        {showQRModal && peer.id && (
-          <QRCodeModal
-            id={peer.id}
-            onClose={() => setShowQRModal(false)}
-            setShowFileScanner={setShowFileScanner}
-          />
-        )}
-        <ScannerModal
-          show={showScanner}
-          onClose={() => setShowScanner(false)}
-          onScanSuccess={onScanSuccess}
-        />
-        <FileScannerModal
-          show={showFileScanner}
-          onClose={() => setShowFileScanner(false)}
-          onScanSuccess={onScanSuccess}
-        />
       </div>
     </div>
   );

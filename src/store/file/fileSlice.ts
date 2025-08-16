@@ -3,18 +3,20 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 interface UploadedFile {
   id: string;
   fileName: string;
+  type: string;
   size: number;
   uploadedAt: number;
   progress: number;
   status: "uploading" | "completed" | "error";
 }
 
-interface DownloadedFile {
+export interface DownloadedFile {
   id: string;
   file: Blob;
   fileName: string;
   receivedAt: number;
   size: number;
+  type: string;
 }
 
 interface FileState {
@@ -41,12 +43,13 @@ const fileSlice = createSlice({
   reducers: {
     addUploadingFile: (
       state,
-      action: PayloadAction<{ fileName: string; size: number }>
+      action: PayloadAction<{ fileName: string; size: number; type: string }>
     ) => {
       const newFile: UploadedFile = {
         id: `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         fileName: action.payload.fileName,
         size: action.payload.size,
+        type: action.payload.type,
         uploadedAt: Date.now(),
         progress: 0,
         status: "uploading",
@@ -90,13 +93,14 @@ const fileSlice = createSlice({
     },
     setDownloadedFile: (
       state,
-      action: PayloadAction<{ file: Blob; fileName: string }>
+      action: PayloadAction<{ file: Blob; fileName: string; type: string }>
     ) => {
       const newFile: DownloadedFile = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         file: action.payload.file,
         fileName: action.payload.fileName,
         receivedAt: Date.now(),
+        type: action.payload.type,
         size: action.payload.file.size,
       };
       state.downloadedFiles.push(newFile);

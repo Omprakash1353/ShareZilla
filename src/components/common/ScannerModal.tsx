@@ -1,56 +1,112 @@
-import QrScanner from "qr-scanner";
-import { useEffect, useRef } from "react";
+"use client";
 
-interface ScannerModalProps {
-  show: boolean;
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { connectPeer } from "@/store/connection/connectionSlice";
+import { useAppDispatch } from "@/store/hooks";
+import QrScanner from "qr-scanner";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+interface QRCodeScannerProps {
+  open: boolean;
   onClose: () => void;
-  onScanSuccess: (decodedText: string) => void;
 }
 
-export function ScannerModal({
-  show,
-  onClose,
-  onScanSuccess,
-}: ScannerModalProps) {
+export function QRCodeScanner({ open, onClose }: QRCodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const scannerRef = useRef<QrScanner | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const dispatch = useAppDispatch();
+
+  // Handle QR scan result
+  const handleScan = (result: QrScanner.ScanResult) => {
+    if (result?.data) {
+      console.log("Scanned QR:", result.data);
+      toast.success("QR Code Scanned!");
+      dispatch(connectPeer(result.data));
+
+      stopScanner();
+      onClose();
+    }
+  };
+
+  // Start scanner
+  const startScanner = async () => {
+    if (videoRef.current && !scannerRef.current) {
+      const scanner = new QrScanner(videoRef.current, handleScan, {
+        highlightScanRegion: true,
+        highlightCodeOutline: true,
+      });
+      scannerRef.current = scanner;
+
+      try {
+        await scanner.start();
+        setIsScanning(true);
+      } catch (error) {
+        console.error("Camera access denied:", error);
+        toast.error("Could not access camera");
+      }
+    }
+  };
+
+  // Stop & clean up
+  const stopScanner = () => {
+    if (scannerRef.current) {
+      scannerRef.current.stop();
+      scannerRef.current.destroy();
+      scannerRef.current = null;
+      setIsScanning(false);
+    }
+  };
 
   useEffect(() => {
-    if (show && videoRef.current) {
-      const qrScanner = new QrScanner(
-        videoRef.current,
-        (result) => {
-          onScanSuccess(result.data);
-          onClose();
-        },
-        {
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-        }
-      );
-
-      qrScanner.start();
-
-      return () => {
-        qrScanner.stop();
-        qrScanner.destroy();
-      };
+    if (open) {
+      startScanner();
+    } else {
+      stopScanner();
     }
-  }, [show, onScanSuccess, onClose]);
 
-  if (!show) return null;
+    return () => stopScanner();
+  }, [open]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-8 rounded-lg shadow-lg text-black">
-        <h2 className="text-2xl font-bold mb-4">Scan QR Code</h2>
-        <video ref={videoRef} style={{ width: "100%" }} />
-        <button
-          onClick={onClose}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Close
-        </button>
-      </div>
-    </div>
+    <Dialog open={open} onOpenChange={(state) => !state && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Scan QR Code</DialogTitle>
+          <DialogDescription>
+            Position the QR code inside the frame to scan automatically.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="relative bg-black rounded-lg overflow-hidden h-[300px]">
+          <video ref={videoRef} className="w-full h-full object-cover" />
+          {/* Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-48 h-48 border-4 border-green-500 rounded-lg animate-pulse" />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          {isScanning ? (
+            <Button variant="destructive" onClick={stopScanner}>
+              Stop
+            </Button>
+          ) : (
+            <Button onClick={startScanner}>Start</Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -30,6 +30,8 @@ const connectionSlice = createSlice({
       state.loading = action.payload;
     },
     addConnectionList(state, action: PayloadAction<string>) {
+      if (state.list.includes(action.payload)) return;
+
       const newList = [...state.list, action.payload];
       if (newList.length === 1) {
         state.selectedId = action.payload;
@@ -71,6 +73,7 @@ export const connectPeer =
       });
 
       PeerConnection.onConnectionReceiveData(id, (file) => {
+        console.info(file)
         toast.info("Receiving file " + file.fileName + " from " + id);
 
         console.info("Receiving", file);
