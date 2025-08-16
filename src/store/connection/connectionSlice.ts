@@ -73,9 +73,6 @@ export const connectPeer =
       });
 
       PeerConnection.onConnectionReceiveData(id, (file) => {
-        console.info(file)
-        toast.info("Receiving file " + file.fileName + " from " + id);
-
         console.info("Receiving", file);
 
         if (file.dataType === DataType.FILE) {

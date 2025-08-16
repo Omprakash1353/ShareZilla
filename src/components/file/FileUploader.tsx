@@ -4,17 +4,18 @@ import { useDispatch } from "react-redux";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { addUploadingFile } from "@/store/file/fileSlice";
+import { sendFileInChunks } from "@/helpers/file-transfer";
+import { store } from "@/store";
+import {
+  addUploadingFile,
+  updateFileUploadProgress,
+} from "@/store/file/fileSlice";
 import { useAppSelector } from "@/store/hooks";
 
-interface FileUploaderProps {
-  onDrop: (acceptedFiles: File[]) => void;
-  isUploading: boolean;
-}
-
-export function FileUploader({ onDrop: parentOnDrop }: FileUploaderProps) {
+export function FileUploader() {
   const dispatch = useDispatch();
   const fileState = useAppSelector((state) => state.file);
+  const connection = useAppSelector((state) => state.connection);
 
   const onDrop = (acceptedFiles: File[]) => {
     acceptedFiles.forEach((file) => {
@@ -25,13 +26,22 @@ export function FileUploader({ onDrop: parentOnDrop }: FileUploaderProps) {
           type: file.type,
         })
       );
+
+      const fileId = store.getState().file.uploadedFiles.at(-1)?.id;
+
+      if (fileId && connection.selectedId) {
+        sendFileInChunks(file, connection.selectedId, fileId, (progress) => {
+          dispatch(
+            updateFileUploadProgress({ fileId, progress: progress * 100 })
+          );
+        });
+      }
     });
-    parentOnDrop(acceptedFiles);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     multiple: true,
-    maxSize: 1024 * 1024 * 1024, // 1GB
+    maxSize: 1024 * 1024 * 1024,
     onDrop,
   });
 

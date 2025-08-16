@@ -18,9 +18,9 @@ export function UploadingFiles() {
   const [showAll, setShowAll] = useState(false);
 
   const dispatch = useDispatch();
-  const { uploadedFiles } = useSelector((state: RootState) => ({
-    uploadedFiles: state.file.uploadedFiles,
-  }));
+  const uploadedFiles = useSelector(
+    (state: RootState) => state.file.uploadedFiles
+  );
 
   const handleRemoveFile = (fileId: string) => {
     dispatch(removeUploadedFile(fileId));
@@ -96,6 +96,7 @@ export function UploadingFiles() {
                       <Progress
                         value={file.progress}
                         className="h-2 bg-blue-100"
+                        max={100}
                       />
                     </div>
                   )}

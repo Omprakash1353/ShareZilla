@@ -57,9 +57,12 @@ export const startPeer = (): AppThunk => async (dispatch) => {
       });
 
       PeerConnection.onConnectionReceiveData(peerId, (file) => {
-        toast.loading("Receiving file " + file.fileName + " from " + peerId);
-
+        console.info(
+          "Receiving file " + file.fileName + " from " + peerId,
+          file
+        );
         if (file.dataType === DataType.FILE) {
+          toast.success("File " + file.fileName + " is ready to download");
           download(file.file || "", file.fileName || "fileName", file.fileType);
         }
       });

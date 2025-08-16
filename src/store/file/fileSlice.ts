@@ -1,4 +1,9 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSelector,
+  createSlice,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
+import type { RootState } from "..";
 
 interface UploadedFile {
   id: string;
@@ -45,8 +50,9 @@ const fileSlice = createSlice({
       state,
       action: PayloadAction<{ fileName: string; size: number; type: string }>
     ) => {
+      const newId = `upload-${Date.now()}-${crypto.randomUUID()}`;
       const newFile: UploadedFile = {
-        id: `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: newId,
         fileName: action.payload.fileName,
         size: action.payload.size,
         type: action.payload.type,
@@ -67,6 +73,7 @@ const fileSlice = createSlice({
         file.progress = action.payload.progress;
         if (action.payload.progress >= 100) {
           file.status = "completed";
+          file.progress = 100;
         }
       }
     },
@@ -137,3 +144,10 @@ export const {
 } = fileSlice.actions;
 
 export default fileSlice.reducer;
+
+const selectFileState = (state: RootState) => state.file;
+
+export const selectUploadedFiles = createSelector(
+  [selectFileState],
+  (fileState) => fileState.uploadedFiles
+);

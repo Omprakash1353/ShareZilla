@@ -8,6 +8,7 @@ export const sendFileInChunks = async (
   fileId: string,
   onProgress: (progress: number) => void
 ) => {
+  console.log("sendFileInChunks", { file, connectionId, fileId });
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
   for (let i = 0; i < totalChunks; i++) {
@@ -22,10 +23,10 @@ export const sendFileInChunks = async (
       totalChunks,
       fileName: file.name,
       fileType: file.type,
-      fileId, // Use the provided fileId
+      fileId,
     });
 
-    const progress = ((i + 1) / totalChunks) * 100;
+    const progress = (i + 1) / totalChunks;
     onProgress(progress);
   }
 };
@@ -38,6 +39,14 @@ export const handleReceivedChunk = (
   onFileReady: (file: Blob, fileName: string, type: string) => void
 ) => {
   const { chunk, chunkIndex, totalChunks, fileName, fileType, fileId } = data;
+  console.debug("handleReceivedChunk", {
+    chunk,
+    chunkIndex,
+    totalChunks,
+    fileName,
+    fileType,
+    fileId,
+  });
 
   if (
     !chunk ||
@@ -58,7 +67,7 @@ export const handleReceivedChunk = (
   const chunks = receivedChunks.get(fileId)!;
   chunks[chunkIndex] = chunk;
 
-  const progress = (chunks.filter(Boolean).length / totalChunks) * 100;
+  const progress = chunks.filter(Boolean).length / totalChunks;
   onProgress(progress);
 
   if (chunks.filter(Boolean).length === totalChunks) {

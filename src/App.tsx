@@ -13,13 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { handleReceivedChunk, sendFileInChunks } from "@/helpers/file-transfer";
 import { DataType, PeerConnection } from "@/helpers/peer";
-import type { RootState } from "@/store";
 import {
   changeConnectionInput,
   connectPeer,
 } from "@/store/connection/connectionSlice";
 import {
   resetProgress,
+  selectUploadedFiles,
   setDownloadedFile,
   setFileUploadError,
   setReceiveProgress,
@@ -42,24 +42,12 @@ export interface FileItem {
 export default function FileShare() {
   const peer = useAppSelector((state) => state.peer);
   const connection = useAppSelector((state) => state.connection);
-  const { uploadedFiles } = useSelector((state: RootState) => ({
-    uploadedFiles: state.file.uploadedFiles,
-  }));
+  const uploadedFiles = useSelector(selectUploadedFiles);
+
   const fileState = useAppSelector((state) => state.file);
   const dispatch = useAppDispatch();
 
-  const [fileList, setFileList] = useState<File[]>([]);
   const [showQRScanner, setShowQRScanner] = useState(false);
-
-  const onDrop = (acceptedFiles: File[]) => {
-    setFileList((prev) => [...prev, ...acceptedFiles]);
-  };
-
-  useEffect(() => {
-    if (fileList.length > 0 && connection.selectedId) {
-      handleUpload();
-    }
-  }, [fileList, connection.selectedId]);
 
   useEffect(() => {
     if (connection.selectedId) {
@@ -86,49 +74,10 @@ export default function FileShare() {
 
   const handleStartSession = () => dispatch(startPeer());
 
-  const handleUpload = async () => {
-    if (fileList.length === 0) return toast.warning("Please select files");
-    if (!connection.selectedId)
-      return toast.warning("Please select a connected user");
-
-    try {
-      for (let i = 0; i < fileList.length; i++) {
-        const file = fileList[i];
-        const fileId = fileState.uploadedFiles[i].id;
-
-        await sendFileInChunks(
-          file,
-          connection.selectedId,
-          fileId,
-          (progress) => {
-            const progressPercent = Math.round(progress * 100);
-            dispatch(
-              updateFileUploadProgress({ fileId, progress: progressPercent })
-            );
-          }
-        );
-
-        dispatch(updateFileUploadProgress({ fileId, progress: 100 }));
-      }
-
-      toast.success("All files sent successfully");
-      setFileList([]);
-    } catch (err) {
-      console.error(err);
-      toast.error("Error sending files");
-      fileState.uploadedFiles.forEach((file) => {
-        if (file.status === "uploading") {
-          dispatch(setFileUploadError(file.id));
-        }
-      });
-    }
-  };
-
   const handleStopSession = async () => {
     await PeerConnection.closePeerSession();
     dispatch(stopPeerSession());
     dispatch(resetProgress());
-    setFileList([]);
   };
 
   const onScanSuccess = (decodedText: string) => {
@@ -163,12 +112,7 @@ export default function FileShare() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                <FileUploader
-                  onDrop={onDrop}
-                  isUploading={fileState.uploadedFiles.some(
-                    (f) => f.status === "uploading"
-                  )}
-                />
+                <FileUploader />
 
                 <Tabs defaultValue="uploaded" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">

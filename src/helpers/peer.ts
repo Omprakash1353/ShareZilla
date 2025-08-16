@@ -33,10 +33,12 @@ export const PeerConnection = {
     return new Promise((resolve, reject) => {
       try {
         peer = new Peer();
+
         peer.on("open", (id) => {
           console.log("My ID: " + id);
           resolve(id);
         });
+
         peer.on("error", (err) => {
           console.log(err);
           toast.error(err.message);
@@ -77,6 +79,7 @@ export const PeerConnection = {
     return new Promise((resolve, reject) => {
       try {
         const conn = peer?.connect(id, { reliable: true });
+
         if (!conn) {
           reject(new Error("Connection can't be established"));
         } else {
@@ -97,6 +100,7 @@ export const PeerConnection = {
             if (err.type === "peer-unavailable") {
               const messageSplit = err.message.split(" ");
               const peerId = messageSplit[messageSplit.length - 1];
+
               if (id === peerId) reject(err);
             }
           };
@@ -120,9 +124,11 @@ export const PeerConnection = {
     if (!peer) {
       throw new Error("Peer doesn't start yet");
     }
+
     if (!connectionMap.has(id)) {
       throw new Error("Connection didn't exist");
     }
+
     const conn = connectionMap.get(id);
     if (conn) {
       conn.on("close", () => {
@@ -137,6 +143,7 @@ export const PeerConnection = {
     if (!connectionMap.has(id)) {
       return Promise.reject(new Error("Connection didn't exist"));
     }
+
     return new Promise((resolve, reject) => {
       try {
         const conn = connectionMap.get(id);
@@ -154,9 +161,11 @@ export const PeerConnection = {
     if (!peer) {
       throw new Error("Peer doesn't start yet");
     }
+
     if (!connectionMap.has(id)) {
       throw new Error("Connection didn't exist");
     }
+
     const conn = connectionMap.get(id);
     if (conn) {
       conn.on("data", (receivedData) => {
