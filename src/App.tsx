@@ -8,26 +8,20 @@ import { DownloadedFiles } from "@/components/file/DownloadedFiles";
 import { FileUploader } from "@/components/file/FileUploader";
 import { UploadingFiles } from "@/components/file/UploadingFiles";
 import { ConnectionManager } from "@/components/session/ConnectionManager";
-import { SessionView } from "@/components/session/SessionView";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { handleReceivedChunk, sendFileInChunks } from "@/helpers/file-transfer";
+import { handleReceivedChunk } from "@/helpers/file-transfer";
 import { DataType, PeerConnection } from "@/helpers/peer";
 import {
-  changeConnectionInput,
-  connectPeer,
-} from "@/store/connection/connectionSlice";
-import {
-  resetProgress,
   selectUploadedFiles,
   setDownloadedFile,
-  setFileUploadError,
   setReceiveProgress,
   setReceivingFileName,
-  updateFileUploadProgress,
 } from "@/store/file/fileSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { startPeer, stopPeerSession } from "@/store/peer/peerSlice";
+import { startPeer } from "@/store/peer/peerSlice";
+import { Footer } from "./components/layout/Footer";
+import { Hero } from "./components/layout/Hero";
+import { Badge } from "./components/ui/badge";
 
 export interface FileItem {
   id: string;
@@ -74,78 +68,69 @@ export default function FileShare() {
 
   const handleStartSession = () => dispatch(startPeer());
 
-  const handleStopSession = async () => {
-    await PeerConnection.closePeerSession();
-    dispatch(stopPeerSession());
-    dispatch(resetProgress());
-  };
-
-  const onScanSuccess = (decodedText: string) => {
-    dispatch(changeConnectionInput(decodedText));
-    dispatch(connectPeer(decodedText));
-  };
-
   return (
     <div className="flex flex-col gap-6 mx-auto">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6 text-center">
-          <h1 className="mb-2">ShareZilla</h1>
-          <div className="flex items-center flex-col lg:flex-row justify-center gap-2 mb-4">
-            <span>Your Device ID:</span>
-            <Badge variant="secondary" className="font-mono">
-              {peer.id}
-            </Badge>
-            <Badge
-              variant={connection.list.length > 0 ? "default" : "secondary"}
-            >
-              {connection.list.length} Connected
-            </Badge>
-          </div>
-        </div>
-
+      <div className="w-full mx-auto">
         <main className="flex flex-col gap-8">
           {!peer.started ? (
-            <SessionView
-              handleStartSession={handleStartSession}
-              loading={connection.loading}
-            />
+            <div>
+              <Hero
+                handleStartSession={handleStartSession}
+                loading={connection.loading}
+              />
+              <Footer />
+            </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <FileUploader />
-
-                <Tabs defaultValue="uploaded" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="uploaded">
-                      Uploaded Files ({uploadedFiles.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="received">
-                      Received Files ({fileState.downloadedFiles.length})
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="uploaded" className="mt-4">
-                    <UploadingFiles />
-                  </TabsContent>
-
-                  <TabsContent value="received" className="mt-4">
-                    <DownloadedFiles />
-                  </TabsContent>
-                </Tabs>
+            <div className="mt-6 text-center max-w-7xl mx-auto">
+              <div className="flex items-center flex-col lg:flex-row justify-center gap-2 mb-4">
+                <span>Your Device ID:</span>
+                <Badge variant="secondary" className="font-mono">
+                  {peer.id}
+                </Badge>
+                <Badge
+                  variant={connection.list.length > 0 ? "default" : "secondary"}
+                >
+                  {connection.list.length} Connected
+                </Badge>
               </div>
 
-              <div className="space-y-6">
-                <ConnectionManager
-                  onShowQRScanner={() => setShowQRScanner(true)}
-                />
-                {peer.id && <QRCodeGenerator peerId={peer.id} />}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  <FileUploader />
 
-                {showQRScanner && (
-                  <QRCodeScanner
-                    open={showQRScanner}
-                    onClose={() => setShowQRScanner(false)}
+                  <Tabs defaultValue="uploaded" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="uploaded">
+                        Uploaded Files ({uploadedFiles.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="received">
+                        Received Files ({fileState.downloadedFiles.length})
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="uploaded" className="mt-4">
+                      <UploadingFiles />
+                    </TabsContent>
+
+                    <TabsContent value="received" className="mt-4">
+                      <DownloadedFiles />
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
+                <div className="space-y-6">
+                  <ConnectionManager
+                    onShowQRScanner={() => setShowQRScanner(true)}
                   />
-                )}
+                  {peer.id && <QRCodeGenerator peerId={peer.id} />}
+
+                  {showQRScanner && (
+                    <QRCodeScanner
+                      open={showQRScanner}
+                      onClose={() => setShowQRScanner(false)}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           )}
