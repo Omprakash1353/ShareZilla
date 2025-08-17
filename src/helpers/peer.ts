@@ -6,6 +6,7 @@ export enum DataType {
   FILE = "FILE",
   CHUNK = "CHUNK",
   OTHER = "OTHER",
+  FILE_END = "FILE_END",
 }
 
 export interface Data {
@@ -27,6 +28,10 @@ const connectionMap = new Map<string, DataConnection>();
 export const PeerConnection = {
   getPeer(): Peer | undefined {
     return peer;
+  },
+
+  getConnection(id: string): DataConnection | undefined {
+    return connectionMap.get(id);
   },
 
   startPeerSession(): Promise<string> {
@@ -78,7 +83,10 @@ export const PeerConnection = {
 
     return new Promise((resolve, reject) => {
       try {
-        const conn = peer?.connect(id, { reliable: true });
+        const conn = peer?.connect(id, {
+          reliable: true,
+          serialization: "binary",
+        });
 
         if (!conn) {
           reject(new Error("Connection can't be established"));

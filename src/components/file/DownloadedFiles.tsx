@@ -143,7 +143,7 @@ export function DownloadedFiles() {
                 <div className="flex-shrink-0">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center border border-green-200">
                     <span className="text-lg">
-                      {getFileTypeIcon(file.file.type)}
+                      {getFileTypeIcon(file.file?.type)}
                     </span>
                   </div>
                 </div>

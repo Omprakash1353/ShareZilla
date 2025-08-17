@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { sendFileInChunks } from "@/helpers/file-transfer";
+import { sendFileUltraFastWithWorker } from "@/helpers/file-transfer";
 import { store } from "@/store";
 import {
   addUploadingFile,
@@ -30,11 +30,16 @@ export function FileUploader() {
       const fileId = store.getState().file.uploadedFiles.at(-1)?.id;
 
       if (fileId && connection.selectedId) {
-        sendFileInChunks(file, connection.selectedId, fileId, (progress) => {
-          dispatch(
-            updateFileUploadProgress({ fileId, progress: progress * 100 })
-          );
-        });
+        sendFileUltraFastWithWorker(
+          file,
+          connection.selectedId,
+          fileId,
+          (progress) => {
+            dispatch(
+              updateFileUploadProgress({ fileId, progress: progress * 100 })
+            );
+          }
+        );
       }
     });
   };

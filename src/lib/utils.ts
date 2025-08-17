@@ -13,7 +13,9 @@ export const formatFileSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 };
 
-export const getFileTypeIcon = (type: string) => {
+export const getFileTypeIcon = (type?: string) => {
+  if (!type) return "📄"; // fallback
+
   if (type.startsWith("image/")) return "🖼️";
   if (type.startsWith("video/")) return "🎥";
   if (type.startsWith("audio/")) return "🎵";

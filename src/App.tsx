@@ -9,7 +9,7 @@ import { FileUploader } from "@/components/file/FileUploader";
 import { UploadingFiles } from "@/components/file/UploadingFiles";
 import { ConnectionManager } from "@/components/session/ConnectionManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { handleReceivedChunk } from "@/helpers/file-transfer";
+import { debugConnection, handleReceivedChunk } from "@/helpers/file-transfer";
 import { DataType, PeerConnection } from "@/helpers/peer";
 import {
   selectUploadedFiles,
@@ -19,9 +19,9 @@ import {
 } from "@/store/file/fileSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { startPeer } from "@/store/peer/peerSlice";
-import { Footer } from "./components/layout/Footer";
-import { Hero } from "./components/layout/Hero";
-import { Badge } from "./components/ui/badge";
+import { Footer } from "@/components/layout/Footer";
+import { Hero } from "@/components/layout/Hero";
+import { Badge } from "@/components/ui/badge";
 
 export interface FileItem {
   id: string;
@@ -42,6 +42,13 @@ export default function FileShare() {
   const dispatch = useAppDispatch();
 
   const [showQRScanner, setShowQRScanner] = useState(false);
+
+  // In your FileShare component, add this after establishing connection:
+  useEffect(() => {
+    if (connection.selectedId) {
+      debugConnection(connection.selectedId);
+    }
+  }, [connection.selectedId]);
 
   useEffect(() => {
     if (connection.selectedId) {
